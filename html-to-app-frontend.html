@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HTML to Android App</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --surface: #ffffff;
+      --surface-soft: #f8faff;
+      --text: #182230;
+      --muted: #758195;
+      --line: #e5eaf2;
+      --primary: #5865e8;
+      --primary-dark: #414dcc;
+      --success: #159570;
+      --shadow: 0 20px 60px rgba(28, 39, 70, .10);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background: var(--bg);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px max(22px, calc((100vw - 1180px) / 2));
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand { display: flex; align-items: center; gap: 11px; font-weight: 800; }
+    .brand-mark {
+      display: grid;
+      width: 38px;
+      height: 38px;
+      place-items: center;
+      color: white;
+      background: linear-gradient(135deg, #6572f3, #8a77ed);
+      border-radius: 11px;
+      font-weight: 900;
+    }
+    .brand span { font-size: 1.05rem; }
+    .badge {
+      padding: 7px 11px;
+      color: var(--primary);
+      background: #eef0ff;
+      border-radius: 999px;
+      font-size: .78rem;
+      font-weight: 700;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 390px;
+      gap: 24px;
+      width: min(1180px, calc(100% - 44px));
+      margin: 42px auto;
+    }
+
+    .intro { margin-bottom: 22px; }
+    .eyebrow {
+      margin: 0 0 9px;
+      color: var(--primary);
+      font-size: .78rem;
+      font-weight: 800;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+    h1 { margin: 0; font-size: clamp(2rem, 5vw, 3.5rem); line-height: 1.05; letter-spacing: -.05em; }
+    .intro p:last-child { max-width: 570px; margin: 14px 0 0; color: var(--muted); line-height: 1.6; }
+
+    .card {
+      padding: 24px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+    }
+    .card + .card { margin-top: 18px; }
+    .card-title { margin: 0 0 5px; font-size: 1.08rem; }
+    .card-subtitle { margin: 0 0 19px; color: var(--muted); font-size: .88rem; line-height: 1.5; }
+
+    .dropzone {
+      display: grid;
+      min-height: 190px;
+      place-items: center;
+      padding: 24px;
+      text-align: center;
+      background: var(--surface-soft);
+      border: 1.5px dashed #b9c2d5;
+      border-radius: 15px;
+      cursor: pointer;
+      transition: .2s ease;
+    }
+    .dropzone:hover, .dropzone.dragging { border-color: var(--primary); background: #f0f2ff; }
+    .upload-icon { font-size: 2rem; }
+    .dropzone strong { display: block; margin: 9px 0 5px; }
+    .dropzone small { color: var(--muted); }
+    #fileInput { display: none; }
+    .file-status { min-height: 19px; margin: 13px 0 0; color: var(--success); font-size: .87rem; font-weight: 650; }
+    .file-list { max-height: 120px; margin: 9px 0 0; padding: 0; overflow: auto; color: var(--muted); font-size: .78rem; list-style: none; }
+    .file-list li { padding: 4px 0; border-bottom: 1px solid var(--line); }
+    .upload-project { margin-top: 12px; }
+    .permission-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+    .permission { display: flex; align-items: center; gap: 8px; padding: 10px; color: #4f5b70; background: var(--surface-soft); border: 1px solid var(--line); border-radius: 9px; font-size: .8rem; font-weight: 650; }
+    .permission input { width: auto; accent-color: var(--primary); }
+    .run-build { display: inline-flex; align-items: center; justify-content: center; margin-top: 12px; color: white; text-decoration: none; }
+
+    .form-grid { display: grid; gap: 16px; }
+    label { display: grid; gap: 7px; color: #4f5b70; font-size: .84rem; font-weight: 700; }
+    input, select {
+      width: 100%;
+      padding: 12px 13px;
+      color: var(--text);
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      outline: none;
+      font: inherit;
+    }
+    input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px #e5e7ff; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .preview-wrap { padding: 14px; background: #edf0f6; border-radius: 15px; }
+    .phone {
+      width: 230px;
+      height: 390px;
+      margin: 0 auto;
+      overflow: hidden;
+      background: white;
+      border: 8px solid #202737;
+      border-radius: 27px;
+      box-shadow: 0 10px 25px rgba(24, 34, 48, .18);
+    }
+    .phone-top { height: 22px; background: #202737; }
+    iframe { display: block; width: 100%; height: calc(100% - 22px); border: 0; background: white; }
+    .empty-preview { display: grid; height: 100%; place-items: center; padding: 25px; color: var(--muted); text-align: center; font-size: .82rem; }
+
+    .button {
+      width: 100%;
+      padding: 14px 18px;
+      border: 0;
+      border-radius: 11px;
+      color: white;
+      background: var(--primary);
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+      transition: .18s ease;
+    }
+    .button:hover { background: var(--primary-dark); transform: translateY(-1px); }
+    .button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+    .note { margin: 13px 0 0; color: var(--muted); font-size: .77rem; line-height: 1.45; text-align: center; }
+
+    .steps { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
+    .step { display: flex; gap: 12px; align-items: flex-start; }
+    .step-number { display: grid; flex: 0 0 26px; height: 26px; place-items: center; color: var(--primary); background: #eef0ff; border-radius: 50%; font-size: .78rem; font-weight: 800; }
+    .step strong { display: block; margin-bottom: 3px; font-size: .88rem; }
+    .step span { color: var(--muted); font-size: .8rem; line-height: 1.4; }
+
+    @media (max-width: 850px) {
+      .layout { grid-template-columns: 1fr; }
+      .preview-card { order: -1; }
+    }
+    @media (max-width: 480px) {
+      .layout { width: min(100% - 24px, 600px); margin: 25px auto; }
+      .topbar { padding: 16px 14px; }
+      .badge { display: none; }
+      .card { padding: 18px; }
+      .two-col { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><div class="brand-mark">&lt;/&gt;</div><span>HTML to Android</span></div>
+    <div class="badge">Frontend prototype</div>
+  </header>
+
+  <main class="layout">
+    <section>
+      <div class="intro">
+        <p class="eyebrow">Convert your web project</p>
+        <h1>Turn HTML into an Android app.</h1>
+        <p>Upload your HTML file, customize the app details, preview it on a phone, and prepare it for Android packaging.</p>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">1. Upload your HTML project</h2>
+        <p class="card-subtitle">Choose a single file or upload an entire folder with your HTML, CSS, JavaScript, and image files.</p>
+        <label class="dropzone" id="dropzone" for="fileInput">
+          <input id="fileInput" type="file" webkitdirectory directory multiple />
+          <div>
+            <div class="upload-icon">↑</div>
+            <strong>Drop your folder here</strong>
+            <small>or click to choose a folder · HTML projects supported</small>
+          </div>
+        </label>
+        <div class="file-status" id="fileStatus" aria-live="polite"></div>
+        <ul class="file-list" id="fileList"></ul>
+        <button class="button upload-project" id="uploadProject" type="button" disabled>Upload project</button>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">2. App settings</h2>
+        <p class="card-subtitle">These details will be used for the Android app package.</p>
+        <div class="form-grid">
+          <label>App name <input id="appName" type="text" value="My HTML App" maxlength="30" /></label>
+          <div class="two-col">
+            <label>Package name <input id="packageName" type="text" value="com.example.myapp" /></label>
+            <label>Screen orientation
+              <select id="orientation"><option>Portrait</option><option>Landscape</option><option>Auto-rotate</option></select>
+            </label>
+          </div>
+          <div>
+            <label>Android permissions</label>
+            <div class="permission-grid">
+              <label class="permission"><input type="checkbox" name="permission" value="INTERNET" checked /> Internet</label>
+              <label class="permission"><input type="checkbox" name="permission" value="CAMERA" /> Camera</label>
+              <label class="permission"><input type="checkbox" name="permission" value="ACCESS_FINE_LOCATION" /> Location</label>
+              <label class="permission"><input type="checkbox" name="permission" value="POST_NOTIFICATIONS" /> Notifications</label>
+              <label class="permission"><input type="checkbox" name="permission" value="READ_MEDIA_IMAGES" /> Photos/media</label>
+              <label class="permission"><input type="checkbox" name="permission" value="RECORD_AUDIO" /> Microphone</label>
+            </div>
+          </div>
+          <button class="button" id="generateButton" type="button" disabled>Generate Android App</button>
+          <p class="note">Permissions are added to the Android manifest by your GitHub Actions build workflow.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">3. Run the APK build</h2>
+        <p class="card-subtitle">Upload your project first, then open the connected private repository and start the Android build.</p>
+        <a class="button run-build" id="runBuildButton" href="https://github.com/macksonsamson20-hash/Samy/actions/workflows/build-apk.yml" target="_blank" rel="noopener">Run APK build on GitHub</a>
+        <p class="note">GitHub will open in a new tab. Choose <strong>Run workflow</strong>, then download the APK from the completed workflow run.</p>
+      </div>
+
+    </section>
+
+    <aside>
+      <div class="card preview-card">
+        <h2 class="card-title">Live preview</h2>
+        <p class="card-subtitle">Your uploaded HTML will appear here.</p>
+        <div class="preview-wrap">
+          <div class="phone">
+            <div class="phone-top"></div>
+            <div id="emptyPreview" class="empty-preview">Upload an HTML file to see the mobile preview.</div>
+            <iframe id="preview" title="HTML app preview" hidden></iframe>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">How it works</h2>
+        <ol class="steps">
+          <li class="step"><b class="step-number">1</b><div><strong>Upload</strong><span>Select your HTML frontend.</span></div></li>
+          <li class="step"><b class="step-number">2</b><div><strong>Customize</strong><span>Set the name and app preferences.</span></div></li>
+          <li class="step"><b class="step-number">3</b><div><strong>Generate</strong><span>Send the configuration to your build service.</span></div></li>
+        </ol>
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    const fileInput = document.querySelector('#fileInput');
+    const dropzone = document.querySelector('#dropzone');
+    const fileStatus = document.querySelector('#fileStatus');
+    const preview = document.querySelector('#preview');
+    const emptyPreview = document.querySelector('#emptyPreview');
+    const generateButton = document.querySelector('#generateButton');
+    const uploadProject = document.querySelector('#uploadProject');
+    const fileList = document.querySelector('#fileList');
+    let selectedFiles = [];
+    let previewUrl = null;
+
+    function loadFiles(fileCollection) {
+      const files = Array.from(fileCollection || []);
+      const htmlFile = files.find(file => /(^|\/)index\.html?$/i.test(file.webkitRelativePath || file.name))
+        || files.find(file => /\.html?$/i.test(file.name));
+
+      if (!files.length || !htmlFile) {
+        fileStatus.textContent = 'Please choose a folder containing an index.html file.';
+        fileStatus.style.color = '#d6455d';
+        return;
+      }
+      selectedFiles = files;
+      const folderName = htmlFile.webkitRelativePath ? htmlFile.webkitRelativePath.split('/')[0] : htmlFile.name;
+      fileStatus.textContent = `✓ ${folderName} selected · ${files.length} file${files.length === 1 ? '' : 's'}`;
+      fileStatus.style.color = 'var(--success)';
+      generateButton.disabled = false;
+      uploadProject.disabled = false;
+      fileList.innerHTML = '';
+      files.slice(0, 80).forEach(file => {
+        const item = document.createElement('li');
+        item.textContent = file.webkitRelativePath || file.name;
+        fileList.appendChild(item);
+      });
+      if (files.length > 80) {
+        const more = document.createElement('li');
+        more.textContent = `…and ${files.length - 80} more files`;
+        fileList.appendChild(more);
+      }
+      buildPreview(htmlFile, files);
+      preview.hidden = false;
+      emptyPreview.hidden = true;
+    }
+
+    async function buildPreview(htmlFile, files) {
+      const html = await htmlFile.text();
+      const parser = new DOMParser();
+      const documentCopy = parser.parseFromString(html, 'text/html');
+      const byName = new Map(files.map(file => [file.name.toLowerCase(), file]));
+      const findLocalFile = path => byName.get(path.split('/').pop().split('?')[0].toLowerCase());
+
+      for (const link of [...documentCopy.querySelectorAll('link[rel="stylesheet"][href]')]) {
+        const cssFile = findLocalFile(link.getAttribute('href'));
+        if (cssFile) {
+          const style = documentCopy.createElement('style');
+          style.textContent = await cssFile.text();
+          link.replaceWith(style);
+        }
+      }
+      for (const script of [...documentCopy.querySelectorAll('script[src]')]) {
+        const jsFile = findLocalFile(script.getAttribute('src'));
+        if (jsFile) {
+          script.removeAttribute('src');
+          script.textContent = await jsFile.text();
+        }
+      }
+      const blob = new Blob([documentCopy.documentElement.outerHTML], { type: 'text/html' });
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      previewUrl = URL.createObjectURL(blob);
+      preview.src = previewUrl;
+    }
+
+    fileInput.addEventListener('change', event => loadFiles(event.target.files));
+    ['dragenter', 'dragover'].forEach(type => dropzone.addEventListener(type, event => {
+      event.preventDefault(); dropzone.classList.add('dragging');
+    }));
+    ['dragleave', 'drop'].forEach(type => dropzone.addEventListener(type, event => {
+      event.preventDefault(); dropzone.classList.remove('dragging');
+    }));
+    dropzone.addEventListener('drop', event => loadFiles(event.dataTransfer.files));
+
+    uploadProject.addEventListener('click', () => {
+      if (!selectedFiles.length) return;
+      fileStatus.textContent = `✓ ${selectedFiles.length} project files ready to upload`;
+      uploadProject.textContent = 'Project ready';
+    });
+
+    generateButton.addEventListener('click', () => {
+      const appName = document.querySelector('#appName').value.trim() || 'My HTML App';
+      const packageName = document.querySelector('#packageName').value.trim() || 'com.example.myapp';
+      const permissions = [...document.querySelectorAll('input[name="permission"]:checked')].map(input => input.value);
+      alert(`Android app configuration ready:\n\n${appName}\n${packageName}\n\nPermissions: ${permissions.join(', ') || 'none'}`);
+    });
+
+  </script>
+</body>
+</html>
