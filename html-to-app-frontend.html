@@ -112,7 +112,8 @@
     .permission-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
     .permission { display: flex; align-items: center; gap: 8px; padding: 10px; color: #4f5b70; background: var(--surface-soft); border: 1px solid var(--line); border-radius: 9px; font-size: .8rem; font-weight: 650; }
     .permission input { width: auto; accent-color: var(--primary); }
-    .run-build { display: inline-flex; align-items: center; justify-content: center; margin-top: 12px; color: white; text-decoration: none; }
+    .download-apk { display: none; align-items: center; justify-content: center; margin-top: 12px; color: white; text-decoration: none; }
+    .build-status { min-height: 20px; margin-top: 12px; color: var(--muted); font-size: .82rem; line-height: 1.45; }
 
     .form-grid { display: grid; gap: 16px; }
     label { display: grid; gap: 7px; color: #4f5b70; font-size: .84rem; font-weight: 700; }
@@ -232,15 +233,16 @@
             </div>
           </div>
           <button class="button" id="generateButton" type="button" disabled>Generate Android App</button>
-          <p class="note">Permissions are added to the Android manifest by your GitHub Actions build workflow.</p>
+          <p class="note">Selected permissions will be included in the Android app configuration.</p>
         </div>
       </div>
 
       <div class="card">
-        <h2 class="card-title">3. Run the APK build</h2>
-        <p class="card-subtitle">Upload your project first, then open the connected private repository and start the Android build.</p>
-        <a class="button run-build" id="runBuildButton" href="https://github.com/macksonsamson20-hash/Samy/actions/workflows/build-apk.yml" target="_blank" rel="noopener">Run APK build on GitHub</a>
-        <p class="note">GitHub will open in a new tab. Choose <strong>Run workflow</strong>, then download the APK from the completed workflow run.</p>
+        <h2 class="card-title">3. Build your APK</h2>
+        <p class="card-subtitle">Your project will be securely processed and your APK will appear here when it is ready.</p>
+        <button class="button" id="buildApkButton" type="button" disabled>Build APK</button>
+        <a class="button download-apk" id="downloadApk" href="#" download="android-apk.zip">Download APK</a>
+        <div class="build-status" id="buildStatus" aria-live="polite">Upload a project to begin.</div>
       </div>
 
     </section>
@@ -277,7 +279,11 @@
     const emptyPreview = document.querySelector('#emptyPreview');
     const generateButton = document.querySelector('#generateButton');
     const uploadProject = document.querySelector('#uploadProject');
+    const buildApkButton = document.querySelector('#buildApkButton');
+    const downloadApk = document.querySelector('#downloadApk');
+    const buildStatus = document.querySelector('#buildStatus');
     const fileList = document.querySelector('#fileList');
+    const API_BASE = window.APK_BUILDER_API || '';
     let selectedFiles = [];
     let previewUrl = null;
 
@@ -297,6 +303,7 @@
       fileStatus.style.color = 'var(--success)';
       generateButton.disabled = false;
       uploadProject.disabled = false;
+      buildApkButton.disabled = false;
       fileList.innerHTML = '';
       files.slice(0, 80).forEach(file => {
         const item = document.createElement('li');
@@ -355,6 +362,46 @@
       fileStatus.textContent = `✓ ${selectedFiles.length} project files ready to upload`;
       uploadProject.textContent = 'Project ready';
     });
+
+    buildApkButton.addEventListener('click', async () => {
+      if (!selectedFiles.length) return;
+      buildApkButton.disabled = true;
+      downloadApk.style.display = 'none';
+      buildStatus.textContent = 'Uploading project and starting build…';
+      const formData = new FormData();
+      selectedFiles.forEach(file => formData.append('files', file, file.webkitRelativePath || file.name));
+      try {
+        const response = await fetch(`${API_BASE}/api/build-apk`, { method: 'POST', body: formData });
+        if (!response.ok) throw new Error('Build request failed');
+        buildStatus.textContent = 'Build in progress…';
+        pollBuildStatus();
+      } catch (error) {
+        buildStatus.textContent = 'Unable to start the build. Please try again.';
+        buildApkButton.disabled = false;
+      }
+    });
+
+    async function pollBuildStatus() {
+      try {
+        const response = await fetch(`${API_BASE}/api/build-apk/status`);
+        const result = await response.json();
+        if (result.status === 'complete') {
+          buildStatus.textContent = 'Your APK is ready.';
+          downloadApk.href = `${API_BASE}${result.downloadUrl}`;
+          downloadApk.style.display = 'inline-flex';
+          buildApkButton.disabled = false;
+        } else if (result.status === 'failed') {
+          buildStatus.textContent = 'The APK build failed. Please try again.';
+          buildApkButton.disabled = false;
+        } else {
+          buildStatus.textContent = 'Build in progress…';
+          setTimeout(pollBuildStatus, 5000);
+        }
+      } catch (error) {
+        buildStatus.textContent = 'Checking build status…';
+        setTimeout(pollBuildStatus, 7000);
+      }
+    }
 
     generateButton.addEventListener('click', () => {
       const appName = document.querySelector('#appName').value.trim() || 'My HTML App';
